@@ -1,15 +1,27 @@
 import jwt
 import hashlib
-from app.core.init import SELECT_PARTICIPANT
+from app.core.init import SELECT_PARTICIPANT, INSERT_PARTICIPANT
 
 
 class Participant:
 
     @classmethod
-    async def create(self, account: dict):
-        email = account.get('email')
-        password = account.get('password')
-        currency = account.get('currency')
+    async def create(cls, app, account):
+        errors = []
+        async with app['pg'].acquire() as pgcon:
+            async with pgcon.cursor() as c:
+                try:
+                    await c.execute(
+                        INSERT_PARTICIPANT,
+                        (
+                            account.get('email'),
+                            hashlib.sha1(
+                                account.get('password').encode()).hexdigest(),
+                            account.get('currency')
+                        ))
+                except Exception as e:
+                    errors.append(e.pgerror)
+        return errors
 
     @classmethod
     async def get(cls, app, email: str, password: str):

@@ -24,13 +24,20 @@ async def login(request):
         set_session(session, str(participant), request)
         response = web.json_response({'access': True}, status=200)
     else:
-        response = web.json_response({'access': 'False'}, status=403)
+        response = web.json_response({'access': False}, status=403)
     return response
 
 
 @routes.post('/participant')
 async def registration(request):
-    return web.Response()
+    """ Register new participant """
+    data = await request.json()
+    result = await Participant.create(request.app, data)
+    if not result:
+        response = web.json_response({'result': 'success'}, status=200)
+    else:
+        response = web.json_response({'result': result}, status=400)
+    return response
 
 
 @routes.get('/participant')

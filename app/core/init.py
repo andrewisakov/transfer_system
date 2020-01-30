@@ -43,9 +43,11 @@ GET_ACTUAL = (
     'from transfers tr '
 
 )
-DO_TRNSFER = (
+INSERT_TRANSFER = (
 
 )
+INSERT_PARTICIPANT = 'insert into participants (email, password, currency) values (%s, %s, %s);'
+
 CREATE_CURRENCIES = (
     'create table currencies ('
     'id varchar(3) not null, '
@@ -78,3 +80,11 @@ def init():
                     c.execute(CREATE)
                 except DuplicateTable as e:
                     dsn.rollback()
+            try:
+                c.execute(INSERT_PARTICIPANT,
+                        ('admin',
+                        '5baa61e4c9b93f3f0682250b6cf8331b7ee68fd8',  # password
+                        None,
+                        ))
+            except Exception as e:
+                pass
