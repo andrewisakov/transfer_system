@@ -9,17 +9,15 @@ from aiohttp_session.cookie_storage import EncryptedCookieStorage
 from app.settings import DSN
 from app.core.midware import authorize
 from app.api.handlers import *
-from app.core.models.adapters import ExchangeRates, CBR
+from app.core.models.adapters import xrates
 
 secret = 'secret'
 
 
 async def refresh_rates():
-    # xrates = ExchangeRates()
-    xrates = CBR()
     while True:
         await xrates.fetch()
-        rates = await xrates.parse()
+        await xrates.parse()
         await asyncio.sleep(300)
 
 
