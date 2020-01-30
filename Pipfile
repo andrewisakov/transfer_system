@@ -19,6 +19,8 @@ xmltodict = "*"
 yaml = "*"
 sqlalchemy = "*"
 pyyaml = "*"
+aiohttp-session = {extras = ["secure"],version = "*"}
+cryptography = "*"
 
 [requires]
 python_version = "3.7"
