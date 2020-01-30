@@ -1,0 +1,24 @@
+[[source]]
+name = "pypi"
+url = "https://pypi.org/simple"
+verify_ssl = true
+
+[dev-packages]
+pylama = "*"
+autopep8 = "*"
+pytest-lazy-fixture = "*"
+pytest-cov = "*"
+pytest-asyncio = "*"
+pytest-aiohttp = "*"
+bpython = "*"
+
+[packages]
+aiopg = "*"
+aiohttp = "*"
+xmltodict = "*"
+yaml = "*"
+sqlalchemy = "*"
+pyyaml = "*"
+
+[requires]
+python_version = "3.7"
