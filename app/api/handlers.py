@@ -31,20 +31,42 @@ async def login(request):
 @routes.post('/participant')
 async def registration(request):
     """ Register new participant """
-    data = await request.json()
-    result = await Participant.create(request.app, data)
-    if not result:
-        response = web.json_response({'result': 'success'}, status=200)
+    session = await get_session(request)
+    if session.get('email') == 'admin':
+        data = await request.json()
+        result = await Participant.create(request.app, data)
+        if not result:
+            response = web.json_response({'result': 'success'}, status=200)
+        else:
+            response = web.json_response({'result': result}, status=400)
     else:
-        response = web.json_response({'result': result}, status=400)
+        response = web.json_response({'result': 'Недостаточно полномочий!'})
     return response
 
 
-@routes.get('/participant')
+@routes.post('/transfers')
 async def transfer(request):
-    return web.Response()
+    """ Get participants transactions """
+    session = await get_session(request)
+    participant_id = session.get("email")
+    if participant_id:
+        data = await request.json()
+        result = await Participant.get_transactions(request.app, participant_id, data)
+        response = web.json_response(result, status=200)
+    else:
+        response = web.json_response({'result': 'Левая сессия!'}, status=403)
+    return response
 
 
 @routes.post('/transfer')
 async def transfer(request):
-    return web.Response()
+    """ Make participant transaction """
+    session = await get_session(request)
+    participant_id = session.get("email")
+    if participant_id:
+        data = await request.json()
+        result = await Participant.make_transaction(request.app, participant_id, data)
+        response = web.json_response(result, status=200)
+    else:
+        response = web.json_response({'result': 'Левая сессия!'}, status=403)
+    return response

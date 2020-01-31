@@ -4,7 +4,7 @@ import base64
 import logging
 from cryptography import fernet
 from aiohttp import web
-from aiohttp_session import setup, get_session, session_middleware
+from aiohttp_session import get_session, session_middleware
 from aiohttp_session.cookie_storage import EncryptedCookieStorage
 from app.settings import DSN
 from app.core.midware import authorize
@@ -22,7 +22,7 @@ async def refresh_rates():
 
 
 async def create_engines(app):
-    app['pg'] = await aiopg.create_pool(**DSN)
+    app['pg'] = await aiopg.create_pool(**DSN, minsize=10, maxsize=50)
 
 
 async def dispose_engines(app):
@@ -38,8 +38,9 @@ def main():
         loop=loop,
         middlewares=[
             session_middleware(
-                EncryptedCookieStorage(secret_key)),
-            authorize, ])
+                EncryptedCookieStorage(secret_key, max_age=300)),
+            authorize,
+        ])
 
     task = loop.create_task(refresh_rates())
     app.router.add_routes(routes)
