@@ -10,6 +10,13 @@ from .transfer import Transfer
 class Participant:
 
     @classmethod
+    async def get_by_id(cls, app, participant_id):
+        async with app['pg'].acquire() as pgcon:
+            async with pgcon.cursor() as c:
+                await c.execute('select email, id, currency from participants where id=%(id)s', {'id': participant_id})
+                return await c.fetchone()
+
+    @classmethod
     async def create(cls, app, account):
         errors = []
         async with app['pg'].acquire() as pgcon:
@@ -64,14 +71,17 @@ class Participant:
 
         amount = Decimal(amount[m.span()[0]:m.span()[1]])
         participant_id = int(participant_id)
-        funds = await Transfer.get_funds(app, participant_id, amount)
+        payer = await cls.get_by_id(app, participant_id)
+        funds = await Transfer.get_funds(app, payer, amount)
 
         if (funds < amount) and (participant_id != payee[1]):
             errors.append({1003: 'Не достаточно средств!'})
         else:
-            result = await Transfer.create(app, participant_id, payee, amount)
+            transfer_errors = await Transfer.create(app, payer, payee, amount, data.get('description'))
+            if transfer_errors:
+                errors += transfer_errors
             
-        return {'result': result} if not errors else {'errors': errors}
+        return {'result': 'success'} if not errors else {'errors': errors}
 
     @classmethod
     async def get_transactions(cls, app, participant_id, data):
@@ -98,14 +108,23 @@ class Participant:
                 errors.append({2002: f'Дата конца - не дата/время! Но продолжаем с {date2}'})
 
         participant_id = int(participant_id)
+        participant = await cls.get_by_id(app, participant_id)
         result = []
         async with app['pg'].acquire() as pgcon:
             async with pgcon.cursor() as c:
                 await c.execute(SELECT_TANSACTIONS,
                                 {'date1': date1,
                                  'date2': date2,
-                                 'payer_id': participant_id})
-                
-                result = [(r[0], str(r[1]), str(r[2]), r[3]) for r in await c.fetchall()]
+                                 'currency': participant[2],
+                                 'payer_id': participant[1]},
+                                )
+
+                result = [
+                    {'date': r[0],
+                     'currency': r[1],
+                     'debt': str(r[2]),
+                     'credt': r[3],
+                     'email': r[4],
+                     'description': r[5]} for r in await c.fetchall()]
 
         return {'results': result} if not errors else {'results': results, 'errors': errors}

@@ -2,7 +2,7 @@ dsn:
   database: transfer_system
   user: postgres
   password: postgres
-  host: localhost
+  host: 127.0.0.1
   port: 5432
   # minsize: 1
   # maxsize: 50
@@ -11,7 +11,7 @@ init:
   database: postgres
   user: postgres
   password: postgres
-  host: localhost
+  host: 127.0.0.1
   port: 5432
   # minsize: 1
   # maxsize: 50

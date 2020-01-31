@@ -10,6 +10,7 @@ CREATE_TRANSFERS = (
     'participant_id integer not null, '
     'payee_id integer not null, '
     'amount NUMERIC(12, 4) not null, '
+    'currency char(3) not null, '
     'created_at timestamptz not null default now(), '
     'description varchar(512), '
     'primary key (participant_id, created_at), '
@@ -31,16 +32,16 @@ CREATE_PARTICIPANTS = (
 )
 
 SELECT_TANSACTIONS = (
-    'select t.created_at::text, '
-    '(case when (t.participant_id = t.payee_id) or (t.payee_id = %(payer_id)s) then t.amount else 0 end) as debt, '
-    '(case when ((t.participant_id = %(payer_id)s) and (t.participant_id <> t.payee_id)) or '
-    '((t.payee_id = %(payer_id)s) and (t.participant_id <> t.payee_id)) then t.amount else 0 end) as cred, '
-    'p.email '
+    'select t.created_at::text, t.currency, '
+    '(case when (t.payee_id=%(payer_id)s) then t.amount else 0 end)::text as debt, '
+    '(case when (t.participant_id=%(payer_id)s) and (t.payee_id <> %(payer_id)s) then t.amount else 0 end)::text as credt, '
+    '(case when (t.payee_id<>%(payer_id)s) then pe.email else pr.email end) as email, '
+    't.description '
     'from transfers t '
-    'join participants p on (p.id=t.payee_id) '
-    'where (t.participant_id = %(payer_id)s or t.payee_id = %(payer_id)s) and '
-    't.created_at between %(date1)s and %(date2)s '
-    'order by t.created_at;')
+    'join participants pr on (pr.id=t.participant_id) '
+    'join participants pe on (pe.id=t.payee_id) '
+    'where t.currency = %(currency)s and t.created_at between %(date1)s and %(date2)s;'
+)
 
 GET_ACTUAL = (
     'select '
@@ -48,7 +49,8 @@ GET_ACTUAL = (
 
 )
 INSERT_TRANSFER = (
-
+    'insert into transfers (participant_id, payee_id, amount, description, currency) '
+    'values (%(payer_id)s, %(payee_id)s, %(amount)s, %(description)s, %(currency)s);'
 )
 INSERT_PARTICIPANT = 'insert into participants (email, password, currency) values (%s, %s, %s);'
 
@@ -84,6 +86,18 @@ def init():
                 pass
 
 
+SELECT_TANSACTIONS_ALL = (
+    'select t.created_at, t.currency, '
+    '(case when (t.payee_id=%(payer_id)s) then t.amount else 0 end) as debt, '
+    '(case when (t.participant_id=%(payer_id)s) and (t.payee_id <> %(payer_id)s) then t.amount else 0 end) as credt, '
+    '(case when (t.payee_id<>%(payer_id)s) then pe.email else pr.email end) as email, '
+    't.description '
+    'from transfers t '
+    'join participants pr on (pr.id=t.participant_id) '
+    'join participants pe on (pe.id=t.payee_id) '
+    'where t.currency = %(currency)s'
+)
+
 GET_FUNDS = (
-    f'select sum(debt) - sum(cred) as funds from ({SELECT_TANSACTIONS}) debt_credt;'
+    f'select sum(debt) - sum(credt) as funds from ({SELECT_TANSACTIONS_ALL}) debt_credt;'
 )

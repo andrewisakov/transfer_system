@@ -17,7 +17,7 @@ secret = 'secret'
 async def refresh_rates():
     while True:
         await xrates.fetch()
-        await xrates.parse()
+        # await xrates.parse()
         await asyncio.sleep(300)
 
 
