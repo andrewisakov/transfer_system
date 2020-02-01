@@ -1,0 +1,28 @@
+version: "3.3"
+services:
+  postgres:
+    hostname: postgres
+    image: postgres:10
+    ports:
+      - 5432:5432
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+  app:
+    build:
+      context: ./
+      dockerfile: app.docker
+    container_name: test_async
+    # volumes:
+    #   - ./:/transfers
+    ports:
+      - 8080:8080
+    links:
+      - postgres
+    depends_on:
+      - postgres
+    environment:
+      WAIT_HOSTS: postgres:5432
+    hostname: app
+    command: >
+      pipenv run python run.py
